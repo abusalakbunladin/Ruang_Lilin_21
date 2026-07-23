@@ -171,25 +171,19 @@ function sfxHit(){ tone(700,0.05,'square',0.05,0); }
 const NONBOSS_VOLUME = 0.16; 
 const BOSS_VOLUME = 0.42; 
 const DUCK_FACTOR = 0.35; 
-let musicInited = false;
-let currentTrack = null; 
+let currentTrackIdx = null;
 let ducked = false;
-function initMusicSources(){
-if(musicInited) return;
-musicInited = true;
-const nb = document.getElementById('bgm-nonboss');
-const bs = document.getElementById('bgm-boss');
-if(window.MUSIC_NONBOSS_B64 && window.MUSIC_NONBOSS_B64.indexOf('__')!==0){
-nb.src = 'data:audio/mpeg;base64,'+window.MUSIC_NONBOSS_B64;
+function isBossStage(idx){ return idx >= STAGES.length-1; }
+function musicB64ForStage(idx){
+if(idx>=0 && idx<4){
+const v = window['LEVEL_'+(idx+1)+'_MUSIC_B64'];
+if(v) return v;
 }
-if(window.MUSIC_BOSS_B64 && window.MUSIC_BOSS_B64.indexOf('__')!==0){
-bs.src = 'data:audio/mpeg;base64,'+window.MUSIC_BOSS_B64;
+return window.MUSIC_BOSS_B64 || '';
 }
-nb.volume = 0; bs.volume = 0;
-}
-function targetVolume(track){
+function targetVolume(idx){
 if(audioMuted) return 0;
-const base = track==='boss' ? BOSS_VOLUME : NONBOSS_VOLUME;
+const base = isBossStage(idx) ? BOSS_VOLUME : NONBOSS_VOLUME;
 return ducked ? base*DUCK_FACTOR : base;
 }
 function fadeTo(el, vol, ms){
@@ -203,47 +197,36 @@ if(p<1) requestAnimationFrame(step);
 }
 requestAnimationFrame(step);
 }
+function activeMusicEl(idx){ return isBossStage(idx) ? document.getElementById('bgm-boss') : document.getElementById('bgm-nonboss'); }
 function updateStageMusic(){
-initMusicSources();
-const isFinalBoss = stageIndex >= STAGES.length-1;
-const wanted = isFinalBoss ? 'boss' : 'nonboss';
-const nb = document.getElementById('bgm-nonboss');
-const bs = document.getElementById('bgm-boss');
-if(wanted !== currentTrack){
-currentTrack = wanted;
-if(wanted==='boss'){
-try{ nb.pause(); }catch(e){}
-bs.currentTime = 0;
-bs.play().catch(err=>console.warn('Musik boss gagal diputar otomatis:', err && err.message));
-fadeTo(bs, targetVolume('boss'), 1200);
+const wanted = stageIndex;
+const wantedEl = activeMusicEl(wanted);
+const otherEl = isBossStage(wanted) ? document.getElementById('bgm-nonboss') : document.getElementById('bgm-boss');
+const b64 = musicB64ForStage(wanted);
+if(wanted !== currentTrackIdx){
+currentTrackIdx = wanted;
+try{ otherEl.pause(); }catch(e){}
+wantedEl.src = 'data:audio/mpeg;base64,'+b64;
+wantedEl.currentTime = 0;
+wantedEl.play().catch(err=>console.warn('Musik latar gagal diputar otomatis:', err && err.message));
+fadeTo(wantedEl, targetVolume(wanted), 1200);
 } else {
-try{ bs.pause(); }catch(e){}
-nb.currentTime = 0;
-nb.play().catch(err=>console.warn('Musik latar gagal diputar otomatis:', err && err.message));
-fadeTo(nb, targetVolume('nonboss'), 1200);
-}
-} else {
-const el = wanted==='boss' ? bs : nb;
-fadeTo(el, targetVolume(wanted), 400);
+fadeTo(wantedEl, targetVolume(wanted), 400);
 }
 }
 function retryMusicIfStalled(){
-if(!currentTrack || audioMuted) return;
-const el = currentTrack==='boss' ? document.getElementById('bgm-boss') : document.getElementById('bgm-nonboss');
-if(el && el.paused && el.src){
-el.play().catch(()=>{});
-}
+if(currentTrackIdx===null || audioMuted) return;
+const el = activeMusicEl(currentTrackIdx);
+if(el && el.paused && el.src){ el.play().catch(()=>{}); }
 }
 function duckMusic(on){
 ducked = on;
-const el = currentTrack==='boss' ? document.getElementById('bgm-boss') : document.getElementById('bgm-nonboss');
-if(el) fadeTo(el, targetVolume(currentTrack), 350);
+const el = activeMusicEl(currentTrackIdx);
+if(el) fadeTo(el, targetVolume(currentTrackIdx), 350);
 }
 function refreshMusicVolume(){
-const nb = document.getElementById('bgm-nonboss');
-const bs = document.getElementById('bgm-boss');
-if(currentTrack==='boss') fadeTo(bs, targetVolume('boss'), 300);
-else if(currentTrack==='nonboss') fadeTo(nb, targetVolume('nonboss'), 300);
+const el = activeMusicEl(currentTrackIdx);
+if(el) fadeTo(el, targetVolume(currentTrackIdx), 300);
 }
 function flashFx(kind){
 const el = document.getElementById('fx-flash');
