@@ -174,12 +174,25 @@ const DUCK_FACTOR = 0.35;
 let currentTrackIdx = null;
 let ducked = false;
 function isBossStage(idx){ return idx >= STAGES.length-1; }
-function musicB64ForStage(idx){
-if(idx>=0 && idx<4){
-const v = window['LEVEL_'+(idx+1)+'_MUSIC_B64'];
-if(v) return v;
+const LEVEL_MUSIC_URLS=[];
+function b64PartsForStage(idx){
+if(idx>=0 && idx<4) return window['LEVEL_'+(idx+1)+'_MUSIC_B64_PARTS'];
+return window.MUSIC_BOSS_MUSIC_B64_PARTS;
 }
-return window.MUSIC_BOSS_B64 || '';
+function musicBlobUrlForStage(idx){
+if(LEVEL_MUSIC_URLS[idx]) return LEVEL_MUSIC_URLS[idx];
+const b64parts = b64PartsForStage(idx);
+if(!b64parts) return '';
+const bytes=[];
+for(let p=0;p<b64parts.length;p++){
+const bin=atob(b64parts[p]);
+const part=new Uint8Array(bin.length);
+for(let i=0;i<bin.length;i++) part[i]=bin.charCodeAt(i);
+bytes.push(part);
+}
+const url=URL.createObjectURL(new Blob(bytes,{type:'audio/mpeg'}));
+LEVEL_MUSIC_URLS[idx]=url;
+return url;
 }
 function targetVolume(idx){
 if(audioMuted) return 0;
@@ -202,17 +215,14 @@ function updateStageMusic(){
 const wanted = stageIndex;
 const wantedEl = activeMusicEl(wanted);
 const otherEl = isBossStage(wanted) ? document.getElementById('bgm-nonboss') : document.getElementById('bgm-boss');
-const b64 = musicB64ForStage(wanted);
-if(wanted !== currentTrackIdx){
+const url = musicBlobUrlForStage(wanted);
 currentTrackIdx = wanted;
-try{ otherEl.pause(); }catch(e){}
-wantedEl.src = 'data:audio/mpeg;base64,'+b64;
-wantedEl.currentTime = 0;
+try{ otherEl.pause(); otherEl.currentTime=0; }catch(e){}
+if(wantedEl.src !== url){
+wantedEl.src = url;
+}
 wantedEl.play().catch(err=>console.warn('Musik latar gagal diputar otomatis:', err && err.message));
 fadeTo(wantedEl, targetVolume(wanted), 1200);
-} else {
-fadeTo(wantedEl, targetVolume(wanted), 400);
-}
 }
 function retryMusicIfStalled(){
 if(currentTrackIdx===null || audioMuted) return;
@@ -724,6 +734,7 @@ stageIndex = 0;
 carriedPlayerLife = MAX_LIFE_PLAYER;
 totalRoundsPlayed = 0;
 showStageTransition(false);
+updateStageMusic();
 }
 function playDoorTransition(durationMs, callback){
 const el = document.getElementById('door-transition');

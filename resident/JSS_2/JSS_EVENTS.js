@@ -1,3 +1,4 @@
+function onReady(fn){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', fn); else fn(); }
 document.addEventListener('keydown', (e)=>{
 if(e.key && e.key.length===1 && /[a-zA-Z]/.test(e.key)){
 godKeyBuffer = (godKeyBuffer + e.key.toLowerCase()).slice(-GOD_CODE_LEN);
@@ -7,7 +8,7 @@ toggleGodMode();
 }
 }
 });
-document.addEventListener('DOMContentLoaded', ()=>{
+onReady(()=>{
 document.getElementById('god-immune').addEventListener('change', (e)=>{
 godModeImmune = e.target.checked;
 });
@@ -20,7 +21,7 @@ btn.addEventListener('click', ()=>godJumpToStage(parseInt(btn.getAttribute('data
 });
 document.getElementById('god-close').addEventListener('click', toggleGodMode);
 });
-document.addEventListener('DOMContentLoaded', ()=>{
+onReady(()=>{
 document.getElementById('btn-continue').addEventListener('click', ()=>{
 document.getElementById('overlay-round').classList.add('hidden');
 S.awaitingContinue = false;
@@ -49,12 +50,26 @@ document.getElementById('overlay-stage').classList.add('hidden');
 initStageMatch();
 });
 });
-window.addEventListener('DOMContentLoaded', ()=>{
+onReady(()=>{
 document.querySelector('.tutor-figure-wrap').innerHTML=window.SPRITE_TUTOR;
 document.getElementById('end-badge').innerHTML=window.SPRITE_BADGE;
 document.getElementById('candle-opp').outerHTML=window.SPRITE_CANDLE_OPP;
 document.getElementById('candle-player').outerHTML=window.SPRITE_CANDLE_PLAYER;
 initialCandlePositions();
+setTimeout(()=>{
+const nb=document.getElementById('bgm-nonboss');
+const bs=document.getElementById('bgm-boss');
+function preloadMusic(i){
+if(i>=STAGES.length) return;
+try{
+const url=musicBlobUrlForStage(i);
+if(i===0 && nb) nb.src=url;
+if(isBossStage(i) && bs) bs.src=url;
+}catch(e){}
+setTimeout(()=>preloadMusic(i+1), 0);
+}
+preloadMusic(0);
+}, 0);
 let selectedDifficulty = 'normal';
 const diffDescs = {
 mudah:'Mode Bayi: lawan bermain santai dan konsisten, dan nyawamu selalu pulih penuh tiap naik ke tahap berikutnya.',
