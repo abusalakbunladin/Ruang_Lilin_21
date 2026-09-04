@@ -1,0 +1,115 @@
+/* File: CSS_2/lobby_enhance.css
+   Proyek: 21: Ruang Lilin
+   Versi: V.0.9.1.0
+   Fungsi: (1) Panel "Duel" bergambar di layar tunggu (overlay-quickmatch) yang
+   menampilkan kamu & lawan berdampingan, lebih luas & lebih hidup dibanding
+   spinner polos sebelumnya. (2) Lencana Peringkat/Latihan di layar tunggu,
+   layar Buat/Gabung Ruangan, & akhir pertandingan. (3) Ubin kartu trump di
+   Pengaturan Ruangan yang lebih menyerupai kartu asli + tooltip deskripsi
+   custom saat hover/tap. (4) Layar Buat/Gabung Ruangan yang lebih lapang.
+
+   Dimuat sebagai file TERPISAH (pola yang sama dengan matchmaking_ui.css /
+   history_ui.css / reports_ui.css) -- nol risiko ke berkas CSS yang sudah
+   ada. Markup baru yang distyle di sini disuntikkan lewat
+   JSS_2/JSS_LOBBY_ENHANCE.js (bukan lewat index.html) supaya struktur
+   index.html yang sudah diverifikasi seimbang tidak perlu diubah. Memakai
+   variabel warna yang sama dengan file CSS lain di proyek ini. */
+
+/* ================================================================
+   Lencana PERINGKAT / LATIHAN -- dipakai di 3 tempat: layar Buat/Gabung
+   Ruangan, layar tunggu, & (lewat history_ui.css yang sudah punya kelas
+   sendiri utk baris riwayat) tersambung secara visual dgn warna yang sama.
+   ================================================================ */
+.rl-badge{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:4px 10px;border-radius:10px;line-height:1.5;white-space:nowrap}
+.rl-badge svg{width:10px;height:10px;flex-shrink:0}
+.rl-badge.ranked{color:var(--brass-bright);background:rgba(176,138,78,.14);border:1px solid rgba(176,138,78,.45)}
+.rl-badge.practice{color:var(--ink-dim);background:rgba(255,255,255,.03);border:1px solid var(--line)}
+
+/* ================================================================
+   Layar Buat / Gabung Ruangan (overlay-lobby) -- lebih lapang & ada
+   penjelasan Peringkat/Latihan di atas supaya host paham konsekuensi
+   pilihannya SEBELUM membuat ruangan, bukan baru tahu di akhir pertandingan.
+   ================================================================ */
+.overlay-card.rl-lobby-wide{max-width:640px!important}
+.rl-lobby-intro{display:flex;align-items:flex-start;gap:10px;margin:-6px 0 18px;padding:12px 14px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line)}
+.rl-lobby-intro svg{width:18px;height:18px;flex-shrink:0;margin-top:1px;color:var(--brass-bright);stroke:var(--brass-bright)}
+.rl-lobby-intro p{margin:0;font-size:11.5px;line-height:1.7;color:var(--ink-dim)}
+.rl-lobby-intro b{color:var(--ink)}
+.rl-lobby-intro .rl-badge{margin:0 2px}
+@media (min-width:640px){
+  .public-lobby-row{padding:14px 16px}
+  .public-lobby-avatar{width:42px;height:42px;font-size:16px}
+}
+
+/* ================================================================
+   Panel Duel -- layar tunggu (overlay-quickmatch), dua slot ("Kamu" &
+   "Lawan") dgn pemisah "VS", menggantikan spinner polos yang berdiri
+   sendiri. Spinner asli (.qm-spinner) disembunyikan lewat kelas penanda
+   yang ditambahkan JS ke .qm-card, digantikan animasi placeholder pada
+   slot lawan supaya kesannya lebih hidup & tidak ada dua indikator
+   "loading" yang tumpang tindih maknanya.
+   ================================================================ */
+.overlay-card.rl-wait-wide{max-width:640px!important}
+.rl-wait-wide .qm-spinner{display:none}
+.rl-duel-badge-row{display:flex;justify-content:center;margin:-4px 0 16px}
+.rl-duel-panel{display:flex;align-items:stretch;gap:10px;margin:4px 0 18px}
+.rl-duel-slot{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:18px 12px;border-radius:12px;background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);position:relative;min-height:148px;box-shadow:inset 0 0 22px rgba(0,0,0,.35)}
+.rl-duel-slot.you{border-color:var(--brass)}
+.rl-duel-slot.opp.rl-filled{border-color:var(--blood);animation:rlSlotReveal .5s ease-out}
+.rl-duel-slot.opp.rl-empty{border-style:dashed;border-color:var(--line)}
+.rl-duel-avatar{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex-shrink:0}
+.rl-duel-slot.you .rl-duel-avatar{background:radial-gradient(circle at 35% 30%,var(--brass-bright),var(--brass) 75%);color:#1a1108;box-shadow:0 0 16px rgba(176,138,78,.35)}
+.rl-duel-slot.opp.rl-filled .rl-duel-avatar{background:radial-gradient(circle at 35% 30%,#e08a86,var(--blood-bright) 75%);color:#2a0a0d;box-shadow:0 0 16px rgba(176,30,40,.35)}
+.rl-duel-slot.opp.rl-empty .rl-duel-avatar{background:var(--panel);border:2px dashed var(--line);color:var(--ink-dim);animation:rlPulse 1.7s ease-in-out infinite}
+.rl-duel-name{font-size:13px;font-weight:700;color:var(--ink);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rl-duel-rank{font-size:9.5px;color:var(--brass-bright);text-transform:uppercase;letter-spacing:.4px}
+.rl-duel-slot.opp.rl-empty .rl-duel-rank,.rl-duel-slot.opp.rl-empty .rl-duel-name{color:var(--ink-dim);font-weight:400;font-style:italic}
+.rl-duel-tag{font-size:8.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-dim);padding:2px 9px;border-radius:8px;border:1px solid var(--line);margin-top:2px}
+.rl-duel-tag.ready{border-color:var(--brass);color:var(--brass-bright)}
+.rl-duel-vs{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:36px;font-family:"Special Elite",monospace;font-size:15px;color:var(--blood-bright);text-shadow:0 2px 0 rgba(0,0,0,.5)}
+@keyframes rlPulse{0%,100%{opacity:.45}50%{opacity:1}}
+@keyframes rlSlotReveal{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+.rl-code-callout{display:flex;align-items:center;justify-content:center;gap:10px;margin:2px 0 6px}
+.rl-code-callout .lobby-code{margin:0}
+.rl-copy-btn{flex-shrink:0;background:var(--panel);border:1px solid var(--line);color:var(--ink-dim);width:30px;height:30px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:border-color .15s,color .15s}
+.rl-copy-btn svg{width:14px;height:14px}
+.rl-copy-btn:hover{border-color:var(--brass-bright);color:var(--brass-bright)}
+.rl-copy-btn.copied{border-color:#27ae60;color:#27ae60}
+@media (max-width:480px){
+  .rl-duel-panel{flex-direction:column}
+  .rl-duel-vs{width:auto;padding:2px 0}
+  .rl-duel-slot{min-height:112px;padding:14px 10px}
+}
+
+/* ================================================================
+   Pengaturan Ruangan (overlay-room-settings) -- ubin kartu trump sedikit
+   diperbesar & diberi aksen warna di sisi atas supaya lebih terasa "kartu"
+   (bukan cuma ikon kecil), plus lencana info & tooltip mengambang untuk
+   deskripsi lengkap. Kelas dasar .rs-card-visual dkk berasal dari
+   matchmaking_ui.css -- aturan di bawah MENAMBAH, bukan mengganti.
+   ================================================================ */
+.overlay-card.rs-card.rl-settings-wide{max-width:660px!important}
+.rs-card-visual{padding-top:13px;overflow:hidden}
+.rs-card-visual::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--brass);opacity:.55}
+.rs-card-visual.online-special::before{background:var(--online-bright)}
+.rs-card-visual-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.04)}
+.rs-card-visual svg{width:20px;height:20px}
+.rs-info-badge{position:absolute;top:5px;left:5px;width:15px;height:15px;border-radius:50%;background:rgba(255,255,255,.08);color:var(--ink-dim);font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:10px;line-height:15px;text-align:center;cursor:pointer;transition:background .15s,color .15s;z-index:2}
+.rs-info-badge:hover,.rs-info-badge:focus-visible{background:var(--brass-bright);color:#171006;outline:0}
+.rs-card-visual.online-special .rs-info-badge:hover{background:var(--online-bright);color:#04211d}
+
+/* Tooltip mengambang (portal, position:fixed) -- dikendalikan penuh oleh JS
+   (JSS_LOBBY_ENHANCE.js) supaya tidak pernah terpotong oleh overflow:auto
+   milik #rs-card-list, beda dgn .chip-tooltip yang position:absolute biasa
+   (aman di sana karena kontainernya tidak scroll). Gaya visual sengaja
+   dibuat senada dgn .chip-tooltip yang sudah ada (bg gelap, garis brass). */
+.rl-tooltip{position:fixed;z-index:300;max-width:230px;padding:10px 12px;background:#0c0a08;border:1px solid var(--brass);border-radius:6px;font-size:11px;line-height:1.55;color:var(--ink);box-shadow:0 10px 28px rgba(0,0,0,.75);opacity:0;transform:translateY(4px);transition:opacity .12s ease-out,transform .12s ease-out;pointer-events:none}
+.rl-tooltip.show{opacity:1;transform:translateY(0)}
+.rl-tooltip-name{display:block;font-weight:700;color:var(--brass-bright);margin-bottom:4px;font-size:11.5px}
+.rl-tooltip.online .rl-tooltip-name{color:var(--online-bright)}
+.rl-tooltip.online{border-color:var(--online-bright)}
+.rl-tooltip-note{display:block;margin-top:5px;font-size:9.5px;font-style:italic;color:#7fe0d4}
+
+@media (prefers-reduced-motion:reduce){
+  .rl-duel-slot.opp.rl-empty .rl-duel-avatar,.rl-duel-slot.opp.rl-filled{animation:none!important}
+}

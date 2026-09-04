@@ -1,0 +1,923 @@
+/* ============================================================================
+   File: CSS_2/profile_ui.css
+   Proyek: 21: Ruang Lilin
+   Fungsi: Perluasan tampilan overlay Profil (#overlay-profile) jadi shell
+   sidebar + panel (Daftar Teman / Inbox / History / Ubah Password), sesuai
+   sketsa desain. Ditulis MOBILE-FIRST (base = layar kecil/HP), lalu melebar
+   lewat @media (min-width:...) memakai breakpoint yang SAMA dengan
+   mobile_ux.css/core_ui.css (860px, 1180px) supaya seirama dengan overlay
+   lain yang juga melebar di titik itu.
+
+   File ini murni ADDITIF: hanya mendefinisikan class-class baru
+   (profile-shell, profile-sidebar, profile-nav, profile-panel, inbox-*,
+   friend-requests-*, password-req-*) dan sedikit class lama yang memang
+   sudah ada (mp-input, mp-error, btn) tanpa menimpa definisi aslinya.
+   Tidak ada file lama yang diubah isinya.
+   ============================================================================ */
+
+/* ---- Kartu utama: mobile-first = 1 kolom, sidebar jadi strip atas ---- */
+#overlay-profile .overlay-card.profile-shell{
+  max-width:480px;
+  width:100%;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  max-height:88vh;
+  overflow:hidden;
+  position:relative;
+  gap:0;
+}
+
+.profile-shell-close{
+  position:absolute;
+  top:10px;
+  right:10px;
+  z-index:5;
+  min-width:34px;
+  height:30px;
+  padding:0 12px;
+  border-radius:15px;
+  border:1px solid var(--line);
+  background:rgba(0,0,0,.45);
+  color:var(--ink-dim);
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11px;
+  letter-spacing:.03em;
+  line-height:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:color .15s,border-color .15s,background .15s;
+  white-space:nowrap;
+}
+.profile-shell-close:hover{
+  color:var(--ink);
+  border-color:var(--brass-bright);
+  background:rgba(0,0,0,.7);
+}
+
+.profile-sidebar{
+  flex-shrink:0;
+  padding:24px 20px 14px;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
+.profile-sidebar .profile-head{
+  padding-right:64px; /* jangan ketiban tombol Tutup/Kembali di pojok (dinaikkan dari 56px utk margin aman ekstra) */
+}
+
+/* Stat grid bawaan profile-stats punya 4 kolom (dibuat utk kartu sempit);
+   di sidebar mobile disempitkan jadi 2 kolom biar tetap kebaca & besar. */
+.profile-sidebar .profile-grid{
+  grid-template-columns:repeat(2,1fr);
+}
+
+/* ---- Nav sidebar: mobile-first = strip tombol horizontal yang boleh wrap ---- */
+.profile-nav{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1px solid var(--line);
+}
+#profile-nav.profile-nav-suppressed{
+  display:none;
+}
+.profile-nav-btn{
+  flex:1 1 auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-width:0;
+  padding:10px 10px;
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:8px;
+  color:var(--ink-dim);
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11px;
+  letter-spacing:.02em;
+  cursor:pointer;
+  transition:color .15s,border-color .15s,background .15s;
+  position:relative;
+  white-space:nowrap;
+}
+.profile-nav-btn span:not(.profile-nav-badge){
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.profile-nav-btn:hover{
+  color:var(--ink);
+  border-color:var(--brass);
+}
+.profile-nav-btn.active{
+  color:#1a1108;
+  background:linear-gradient(180deg,var(--brass-bright),var(--brass));
+  border-color:var(--brass-bright);
+  font-weight:700;
+}
+.profile-nav-btn.active .profile-nav-icon{
+  color:#1a1108;
+}
+.profile-nav-icon{
+  width:15px;
+  height:15px;
+  flex-shrink:0;
+  color:var(--ink-dim);
+}
+.profile-nav-btn.active .profile-nav-icon{
+  color:inherit;
+}
+.profile-nav-logout{
+  color:var(--blood-bright);
+  border-color:rgba(176,30,40,.35);
+}
+.profile-nav-logout:hover{
+  color:#fff;
+  background:rgba(176,30,40,.18);
+  border-color:var(--blood-bright);
+}
+.profile-nav-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:16px;
+  height:16px;
+  padding:0 4px;
+  border-radius:8px;
+  background:var(--blood-bright);
+  color:#fff;
+  font-size:9px;
+  font-weight:700;
+  line-height:1;
+}
+.profile-nav-badge.hidden{
+  display:none;
+}
+
+/* ---- Area konten panel ---- */
+.profile-content{
+  flex:1;
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:16px 18px 22px;
+  border-top:1px solid var(--line);
+  /* Flex column: supaya panel yang sedang aktif (lihat .profile-panel.active
+     di bawah) bisa diberi flex:1 dan mengisi PENUH tinggi yang tersedia --
+     dasar dari perbaikan "Daftar Teman kotak kecil": daftar teman jadi bisa
+     ikut melebar mengisi ruang kosong, bukan berhenti di tinggi tetap. */
+  display:flex;
+  flex-direction:column;
+}
+.profile-panel{
+  display:none;
+}
+.profile-panel.active{
+  /* Dulu cuma display:block. Diubah jadi flex column + flex:1 supaya panel
+     aktif mengisi penuh tinggi .profile-content, dan anak yang butuh
+     melebar (mis. #profile-friends-list, #inbox-list) tinggal diberi
+     flex:1 juga. Panel lain (History/Password) yang tidak punya anak
+     flex:1 tetap terlihat identik seperti sebelumnya -- cuma jadi flex
+     container tanpa efek visual tambahan karena kontennya tetap stack
+     block seperti biasa (align-items:stretch = lebar penuh, sama seperti
+     block dulu). */
+  display:flex;
+  flex-direction:column;
+  flex:1 1 auto;
+  min-height:0;
+  animation:.35s both fadeIn;
+}
+/* Class "hidden" pada #profile-friends-section dipakai kode lama
+   (mpViewFriendProfile) utk menyembunyikan panel Teman saat sedang melihat
+   profil pemain lain -- harus selalu menang atas .active. */
+.profile-panel.hidden{
+  display:none!important;
+}
+
+.profile-panel-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:0 0 12px;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--line);
+  flex-shrink:0;
+}
+.profile-panel-header h3{
+  font-size:13px;
+  color:var(--brass-bright);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin:0;
+}
+.profile-panel-desc{
+  font-size:11.5px;
+  color:var(--ink-dim);
+  line-height:1.5;
+  margin:0 0 14px;
+  flex-shrink:0;
+}
+.profile-subheading{
+  font-size:11px;
+  color:var(--ink-dim);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin:20px 0 10px;
+  padding-top:14px;
+  border-top:1px dashed var(--line);
+}
+/* Wrapper tombol di pojok kanan header panel (mis. "+ Tambah Teman" +
+   "Permintaan"). Sebelumnya TIDAK punya display:flex sama sekali, jadi
+   dua tombol di dalamnya jatuh sebagai block bertumpuk vertikal. */
+.profile-panel-toolbar{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+/* PERBAIKAN BUG: selector lama ".profile-toolbar-btn" (1 class, spesifisitas
+   0-1-0) KALAH oleh ".overlay-card .btn" di online_ui.css (2 class,
+   spesifisitas 0-2-0) yang memaksa width:100%;display:block;margin-top:10px
+   ke SEMUA tombol di dalam overlay-card manapun. Akibatnya tombol
+   "+ Tambah Teman", "Permintaan", dan "Tandai Semua Dibaca" dulu selalu
+   dirender full-width & bertumpuk vertikal, bukan sejajar rapi seperti
+   niat desainnya -- ini akar dari kesan "tabrakan"/berantakan di header
+   panel. Prefix "#overlay-profile" menaikkan spesifisitas (1-1-0) supaya
+   pasti menang, di breakpoint manapun & tanpa bergantung urutan file CSS. */
+#overlay-profile .profile-toolbar-btn{
+  width:auto;
+  flex:0 0 auto;
+  margin:0;
+  padding:9px 14px;
+  font-size:10.5px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+
+/* Saat sedang melihat profil pemain lain: kembalikan ke kartu ringkas
+   1-kolom seperti perilaku aslinya (nav & panel ekstra tidak relevan). */
+#overlay-profile .overlay-card.profile-shell.viewing-other-profile{
+  max-width:400px;
+}
+.profile-shell.viewing-other-profile .profile-content{
+  display:none;
+}
+.profile-shell.viewing-other-profile .profile-sidebar{
+  border-right:none;
+}
+
+/* =========================== DAFTAR TEMAN =============================== */
+.profile-add-friend{
+  margin-bottom:14px;
+  padding:12px;
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:8px;
+  flex-shrink:0;
+}
+.profile-add-friend.hidden{
+  display:none;
+}
+.profile-add-friend-row{
+  display:flex;
+  gap:8px;
+}
+.profile-add-friend-row .mp-input{
+  flex:1;
+  min-width:0;
+}
+.profile-add-friend-row .btn{
+  width:auto;
+  flex-shrink:0;
+  padding:0 14px;
+}
+
+.friend-requests-panel{
+  margin-bottom:14px;
+  padding:10px 12px;
+  background:rgba(176,138,78,.08);
+  border:1px solid rgba(176,138,78,.35);
+  border-radius:8px;
+  flex-shrink:0;
+}
+.friend-requests-panel.hidden{
+  display:none;
+}
+.friend-request-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 0;
+}
+.friend-request-row + .friend-request-row{
+  border-top:1px solid rgba(176,138,78,.2);
+}
+.friend-request-empty{
+  font-size:11.5px;
+  color:var(--ink-dim);
+  text-align:center;
+  padding:6px 0;
+}
+.friend-request-info{
+  flex:1;
+  min-width:0;
+}
+.friend-request-name{
+  font-size:13px;
+  color:var(--ink);
+  font-weight:700;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.friend-request-sub{
+  font-size:10px;
+  color:var(--ink-dim);
+  margin-top:1px;
+}
+.friend-request-actions{
+  display:flex;
+  gap:8px;
+  flex-shrink:0;
+}
+.friend-request-actions .btn{
+  width:auto;
+  margin:0; /* .overlay-card .btn (online_ui.css) menyisakan margin-top:10px yg bikin tombol sedikit turun dari center sejajar nama */
+  padding:7px 10px;
+  font-size:10.5px;
+}
+
+.friend-search-input{
+  margin-bottom:10px;
+  flex-shrink:0;
+}
+
+/* PERBAIKAN: #profile-friends-list bawaan (online_ui.css) dipatok
+   max-height:180px -- jadi kotak kecil dgn scrollbar sendiri padahal area
+   panel di sekitarnya (.profile-content, sekarang flex column) masih
+   punya banyak ruang kosong di bawahnya. Redefinisi ID yang sama di sini
+   (dimuat belakangan drpd online_ui.css, jadi menang) supaya daftar teman
+   ikut melebar/flex mengisi sisa tinggi panel Daftar Teman, dan tetap
+   scroll ke bawah kalau temannya banyak. min-height tetap dijaga sebagai
+   lantai supaya tidak collapse kalau area di atasnya (form tambah teman/
+   permintaan yg lagi dibuka) makan banyak tempat. */
+#profile-friends-list{
+  flex:1 1 auto;
+  min-height:200px;
+  max-height:none;
+  overflow-y:auto;
+  margin-bottom:0;
+  padding-right:2px;
+}
+
+.friend-list-empty{
+  text-align:center;
+  color:var(--ink-dim);
+  font-size:12px;
+  padding:24px 10px;
+}
+
+/* Baris teman -- didesain ulang jadi kartu kecil: avatar berinisial +
+   nama + status ("friend-info") yang SELURUHNYA bisa diklik utk membuka
+   profil teman (bukan cuma teks nama kecil seperti sebelumnya), terpisah
+   dari baris tombol aksi (Chat/Tantang/Hapus). Nama class lama
+   (.friend-name/.friend-status/.friend-actions) dipertahankan supaya tetap
+   konsisten dgn markup yg dihasilkan JSS_2/JSS_PROFILE_UI.js -- override
+   di sini (ID-scoped, dimuat belakangan drpd online_ui.css) menang atas
+   definisi grid 3-kolom bawaan tanpa perlu menyentuh file lama itu.
+   [v0.9.1.0] Jangan hapus prefix "#profile-friends-list" di selector²
+   bawah ini -- itu yg bikin aturan sini menang drpd online_ui.css tanpa
+   bergantung urutan <link>. Penjelasan lengkap: root proyek ->
+   PENJELASAN_TEKNIS_PERUBAHAN_TEMAN_CHAT_HISTORY.md, bagian 1. */
+#profile-friends-list .friend-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:10px;
+  position:relative;
+  padding:10px 12px;
+  margin-bottom:8px;
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:10px;
+  transition:border-color .15s,background-color .15s;
+}
+#profile-friends-list .friend-row:last-child{
+  margin-bottom:0;
+}
+#profile-friends-list .friend-row:hover{
+  border-color:rgba(176,138,78,.4);
+}
+#profile-friends-list .friend-info{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  flex:1 1 170px;
+  cursor:pointer;
+  padding:4px;
+  margin:-4px;
+  border-radius:8px;
+  transition:background-color .15s;
+}
+#profile-friends-list .friend-info:hover{
+  background:rgba(176,138,78,.1);
+}
+#profile-friends-list .friend-info:hover .friend-name{
+  text-decoration:underline;
+}
+#profile-friends-list .friend-avatar{
+  flex-shrink:0;
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:15px;
+  font-weight:700;
+  background:radial-gradient(circle at 35% 30%,var(--brass-bright),var(--brass) 75%);
+  color:#1a1108;
+  box-shadow:0 0 10px rgba(176,138,78,.3);
+}
+#profile-friends-list .friend-name-wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:3px;
+  min-width:0;
+}
+#profile-friends-list .friend-name{
+  cursor:pointer;
+  color:var(--brass-bright);
+  font-weight:700;
+  max-width:100%;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#profile-friends-list .friend-status{
+  font-size:10px;
+  color:var(--ink-dim);
+  white-space:nowrap;
+  padding:1px 8px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:rgba(255,255,255,.02);
+}
+#profile-friends-list .friend-actions{
+  flex-wrap:wrap;
+  gap:8px; /* dari 6px bawaan online_ui.css -- jarak antar tombol Chat/Tantang/Hapus */
+  flex-shrink:0;
+}
+.friend-chat-btn{
+  position:relative;
+}
+.friend-chat-badge{
+  position:absolute;
+  top:-6px;
+  right:-6px;
+  min-width:16px;
+  height:16px;
+  padding:0 4px;
+  border-radius:8px;
+  background:var(--blood-bright);
+  color:#fff;
+  font-size:9px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+  box-shadow:0 0 0 2px var(--panel);
+}
+.friend-chat-badge.hidden{
+  display:none;
+}
+
+/* Di kartu mobile (~300px area konten), satu baris rata kiri-kanan
+   memaksa nama teman ketiban jadi sempit. Di bawah breakpoint 860px
+   (saat sidebar profil jg masih bertumpuk), baris teman ditumpuk 2-baris:
+   info (avatar+nama+status) penuh di atas, baris tombol aksi penuh di
+   bawah -- supaya nama teman selalu terbaca utuh & tombol tetap besar/
+   enak disentuh. Di >=860px tetap satu baris sejajar (sudah cukup lega
+   di sana). */
+@media (max-width:859px){
+  #profile-friends-list .friend-row{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  #profile-friends-list .friend-name{
+    white-space:normal;
+    word-break:break-word;
+  }
+  #profile-friends-list .friend-actions{
+    width:100%;
+  }
+  #profile-friends-list .friend-actions .btn{
+    flex:1 1 0;
+    width:auto;
+    padding:9px 4px;
+    font-size:10.5px;
+  }
+}
+
+/* =============================== INBOX =================================== */
+.inbox-tabs{
+  display:flex;
+  gap:6px;
+  margin-bottom:10px;
+  flex-wrap:wrap;
+  flex-shrink:0;
+}
+.inbox-tab{
+  flex:1 1 auto;
+  padding:8px 10px;
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:7px;
+  color:var(--ink-dim);
+  font-family:"IBM Plex Mono",monospace;
+  font-size:10.5px;
+  letter-spacing:.02em;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:color .15s,border-color .15s,background .15s;
+}
+.inbox-tab:hover{
+  color:var(--ink);
+}
+.inbox-tab.active{
+  color:#1a1108;
+  background:var(--brass-bright);
+  border-color:var(--brass-bright);
+  font-weight:700;
+}
+.inbox-search-input{
+  margin-bottom:12px;
+  flex-shrink:0;
+}
+
+/* Ikut melebar mengisi sisa tinggi panel, sama seperti #profile-friends-list
+   di atas -- biar tab Inbox terasa konsisten, bukan cuma Daftar Teman saja
+   yang diperbaiki. */
+#inbox-list.inbox-list{
+  flex:1 1 auto;
+  min-height:160px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.inbox-empty{
+  text-align:center;
+  color:var(--ink-dim);
+  font-size:12px;
+  padding:28px 10px;
+}
+.inbox-row{
+  display:flex;
+  gap:10px;
+  padding:11px 12px;
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-left:3px solid var(--line);
+  border-radius:8px;
+  cursor:pointer;
+  transition:border-color .15s,background .15s;
+}
+.inbox-row:hover{
+  border-color:var(--brass);
+}
+.inbox-row.unread{
+  border-left-color:var(--blood-bright);
+  background:rgba(176,30,40,.06);
+}
+.inbox-row-avatar{
+  flex-shrink:0;
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+  font-size:14px;
+  background:radial-gradient(circle at 35% 30%,var(--brass-bright),var(--brass) 75%);
+  color:#1a1108;
+}
+.inbox-row-body{
+  flex:1;
+  min-width:0;
+}
+.inbox-row-top{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-bottom:2px;
+}
+.inbox-row-name{
+  font-size:12.5px;
+  font-weight:700;
+  color:var(--ink);
+}
+.inbox-row-time{
+  margin-left:auto;
+  font-size:10px;
+  color:var(--ink-dim);
+  flex-shrink:0;
+}
+.inbox-row-snippet{
+  font-size:11.5px;
+  color:var(--ink-dim);
+  line-height:1.4;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.inbox-row.unread .inbox-row-snippet{
+  color:var(--ink);
+}
+.inbox-row-dot{
+  flex-shrink:0;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--blood-bright);
+  margin-top:4px;
+}
+.inbox-row-dot.hidden{
+  display:none;
+}
+
+/* Detail pesan (dibuka saat sebuah baris inbox diklik) */
+.inbox-detail{
+  padding:12px 14px;
+  margin-bottom:12px;
+  background:var(--panel-2);
+  border:1px solid var(--brass);
+  border-radius:8px;
+  flex-shrink:0;
+}
+.inbox-detail.hidden{
+  display:none;
+}
+.inbox-detail-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:8px;
+}
+.inbox-detail-from{
+  font-size:12.5px;
+  font-weight:700;
+  color:var(--ink);
+}
+.inbox-detail-close{
+  width:auto;
+  padding:4px 8px;
+  font-size:10px;
+  background:transparent;
+  border:1px solid var(--line);
+  color:var(--ink-dim);
+  border-radius:5px;
+  cursor:pointer;
+}
+.inbox-detail-body{
+  font-size:12.5px;
+  color:var(--ink);
+  line-height:1.6;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
+/* ============================ UBAH PASSWORD =============================== */
+#profile-panel-password textarea.mp-input{
+  resize:vertical;
+  min-height:70px;
+}
+#profile-panel-password .mp-error,
+#profile-panel-password .mp-message{
+  min-height:0;
+  margin:6px 0;
+}
+.mp-message{
+  font-size:11.5px;
+  color:var(--online-bright);
+}
+.mp-message.hidden,.mp-error.hidden{
+  display:none;
+}
+#btn-password-req-submit{
+  margin-top:4px;
+}
+
+.password-req-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.password-req-empty{
+  text-align:center;
+  color:var(--ink-dim);
+  font-size:12px;
+  padding:20px 10px;
+}
+.password-req-card{
+  padding:12px 14px;
+  background:var(--panel-2);
+  border:1px solid var(--line);
+  border-radius:8px;
+}
+.password-req-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:6px;
+}
+.password-req-date{
+  font-size:10.5px;
+  color:var(--ink-dim);
+}
+.password-req-status{
+  display:inline-block;
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  padding:3px 8px;
+  border-radius:4px;
+}
+.password-req-status.pending{
+  background:rgba(176,138,78,.18);
+  color:var(--brass-bright);
+  border:1px solid rgba(176,138,78,.4);
+}
+.password-req-status.approved{
+  background:rgba(79,209,197,.14);
+  color:var(--online-bright);
+  border:1px solid rgba(79,209,197,.4);
+}
+.password-req-status.rejected{
+  background:rgba(176,30,40,.14);
+  color:var(--blood-bright);
+  border:1px solid rgba(176,30,40,.4);
+}
+.password-req-reason{
+  font-size:12px;
+  color:var(--ink);
+  line-height:1.5;
+  margin-bottom:4px;
+  word-break:break-word;
+}
+.password-req-note{
+  font-size:11px;
+  color:var(--ink-dim);
+  line-height:1.5;
+  padding-top:6px;
+  margin-top:6px;
+  border-top:1px dashed var(--line);
+  word-break:break-word;
+}
+.password-req-actions{
+  display:flex;
+  gap:8px;
+  margin-top:8px;
+}
+.password-req-actions .btn{
+  width:auto;
+  margin:0; /* cegah dobel jarak dgn margin-top:8px milik .password-req-actions */
+  padding:7px 12px;
+  font-size:10.5px;
+}
+.password-req-edit-row{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:8px;
+}
+.password-req-edit-row textarea{
+  resize:vertical;
+  min-height:60px;
+}
+.password-req-edit-actions{
+  display:flex;
+  gap:8px;
+}
+.password-req-edit-actions .btn{
+  width:auto;
+  margin:0; /* cegah dobel jarak dgn margin-top:8px milik .password-req-edit-actions */
+  padding:7px 12px;
+  font-size:10.5px;
+}
+
+/* ============================================================================
+   >= 860px (breakpoint sama seperti core_ui.css/mobile_ux.css): sidebar jadi
+   kolom kiri tetap + konten kolom kanan, kartu melebar ("lebih luas").
+   ============================================================================ */
+@media (min-width:860px){
+  #overlay-profile .overlay-card.profile-shell{
+    max-width:860px; /* dari 760px -- modal profil lebih luas sesuai permintaan */
+    flex-direction:row;
+    max-height:82vh;
+  }
+  #overlay-profile .overlay-card.profile-shell.viewing-other-profile{
+    max-width:420px;
+    flex-direction:column;
+  }
+  .profile-sidebar{
+    width:260px; /* dari 250px, seiring shell yg lebih lebar */
+    flex-shrink:0;
+    padding:30px 22px;
+    border-right:1px solid var(--line);
+    background:rgba(0,0,0,.15);
+  }
+  .profile-sidebar .profile-grid{
+    grid-template-columns:repeat(2,1fr);
+  }
+  .profile-nav{
+    flex-direction:column;
+    flex-wrap:nowrap;
+    gap:8px; /* dari 6px (bawaan mobile-first) -- jarak antar tombol nav lebih lega */
+  }
+  .profile-nav-btn{
+    justify-content:flex-start;
+    padding:11px 12px;
+  }
+  .profile-content{
+    /* padding-top dinaikkan dari 30px -> 52px: tombol Tutup (.profile-shell-close)
+       posisinya absolute top:10px, tinggi ~30px thd SELURUH shell, jadi
+       menjorok sampai ~40px dari atas. Header panel (h3 + tombol toolbar
+       kanan-atas) butuh mulai di bawah itu dgn jarak aman, kalau tidak akan
+       nyaris/bertabrakan dgn tombol Tutup begitu tombol toolbar dirender
+       sejajar (lihat perbaikan .profile-toolbar-btn di atas). */
+    padding:52px 34px 34px;
+    border-top:none;
+  }
+}
+
+/* ============================================================================
+   >= 1180px: sedikit lebih lega lagi, sejalan dgn #app yg juga melebar di
+   titik ini.
+   ============================================================================ */
+@media (min-width:1180px){
+  #overlay-profile .overlay-card.profile-shell{
+    max-width:1000px; /* dari 880px -- makin luas di layar besar */
+  }
+  .profile-sidebar{
+    width:290px; /* dari 270px */
+  }
+}
+
+/* ---- Layar sangat kecil (HP kecil, <380px lebar) : rapatkan sedikit ---- */
+@media (max-width:380px){
+  .profile-sidebar{
+    padding:18px 14px 12px;
+  }
+  .profile-content{
+    padding:14px 12px 18px;
+  }
+  .profile-nav-btn{
+    font-size:10px;
+    padding:9px 6px;
+  }
+  .inbox-row-avatar,.chat-header-avatar{
+    width:32px;
+    height:32px;
+    font-size:12px;
+  }
+}
+
+/* ---- Sentuhan: pastikan target ketuk cukup besar di layar sentuh ---- */
+@media (pointer:coarse){
+  .profile-nav-btn{
+    min-height:42px;
+  }
+  .inbox-tab{
+    min-height:38px;
+  }
+  .profile-toolbar-btn{
+    min-height:36px;
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .profile-panel.active{
+    animation:none;
+  }
+}

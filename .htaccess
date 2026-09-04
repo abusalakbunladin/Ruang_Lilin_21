@@ -1,0 +1,178 @@
+# File: .htaccess (root)
+# Proyek: 21: Ruang Lilin
+# Fungsi: Aktifkan kompresi teks & cache browser untuk aset statis (CSS/JS/gambar).
+# Dibungkus <IfModule> supaya aman kalau modul tertentu tidak tersedia di hosting
+# (InfinityFree) -- baris yang tidak didukung otomatis dilewati, tidak bikin error.
+#
+# Kenapa ini ditambahkan: laporan PageSpeed Insights menunjukkan "Tidak ada
+# kompresi yang diterapkan" pada semua file CSS/JS, dan skor performa Mobile
+# cuma 66 (Desktop 92). Semua aset di proyek ini sudah pakai cache-busting lewat
+# query string (?v=V.X.X.X.X di setiap file), jadi AMAN memberi masa cache yang
+# panjang -- begitu nomor versi di index.html dinaikkan, browser otomatis
+# mengambil versi baru karena URL-nya berbeda, tanpa perlu menunggu cache basi.
+
+# ================================================================
+# LANGKAH WAJIB SEBELUM MENGAKTIFKAN INI:
+# Buka https://gamekartuduasatu.freepage.cc/ langsung di browser. Kalau
+# halaman terbuka normal dengan gembok aman (bukan error sertifikat), baru
+# hapus tanda # di 6 baris RewriteCond/RewriteRule + Header di bawah ini.
+# Kalau belum yakin SSL aktif, JANGAN dihapus dulu -- laporan PageSpeed
+# memang minta ini ("Tidak mengalihkan traffic HTTP ke HTTPS"), tapi kalau
+# SSL ternyata belum aktif, mengaktifkan paksa HTTPS bisa membuat SELURUH
+# situs tidak bisa diakses sama sekali (redirect loop) sampai baris ini
+# dikomentari lagi.
+#
+# [CATATAN V.0.9.1.0 — PERBAIKAN] Di paket V.0.9.0.0, 6 baris di bawah ini
+# ternyata KETINGGALAN AKTIF (tanpa '#') padahal instruksi di atas jelas
+# bilang harus tetap dikomentari sampai SSL dicek manual dulu. Ini cocok
+# persis dengan gejala yang dilaporkan di Google Search Console: sitemap
+# gagal diambil ("Tidak dapat mengambil peta situs", 0 halaman ditemukan)
+# pada properti http://gamekartuduasatu.freepage.cc/ — kalau SSL/HTTPS
+# belum aktif penuh di hosting, redirect paksa ini membuat Googlebot (dan
+# semua pengunjung lewat http://) mendarat di alamat https:// yang gagal
+# dimuat, sehingga situs terlihat "tidak bisa diakses" dari luar.
+# Kemungkinan besar '#'-nya hilang saat .htaccess direkonstruksi dari
+# gabungan paket sumber (lihat CHANGELOG_LENGKAP.md bagian V.0.9.0.0) —
+# blok peringatan ini ikut tersalin, tapi status "belum diaktifkan"-nya
+# tidak. Dikembalikan ke non-aktif di sini.
+# JANGAN hapus '#' di 6 baris ini lagi sebelum: (1) buka
+# https://gamekartuduasatu.freepage.cc/ langsung di browser, (2) pastikan
+# halaman terbuka normal dengan gembok aman, TANPA peringatan sertifikat
+# apa pun. Kalau itu sudah aman barulah aktifkan kembali.
+# <IfModule mod_rewrite.c>
+#   RewriteEngine On
+#   RewriteCond %{HTTPS} off
+#   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# </IfModule>
+# <IfModule mod_headers.c>
+#   Header always set Strict-Transport-Security "max-age=300; includeSubDomains"
+# </IfModule>
+#
+# [PENTING] Blok di atas TERNYATA BUKAN penyebab utama error "Tidak dapat
+# mengambil peta situs" di Google Search Console -- itu baru dugaan awal.
+# Penyebab yang jauh lebih didukung bukti: sistem anti-bot wajib InfinityFree
+# (bukan sesuatu yang bisa diperbaiki lewat file ini). Sebelum mengubah
+# apa pun lagi di file ini untuk urusan indexing/sitemap, baca dulu
+# STATUS_INDEXING_GOOGLE.md di root proyek.
+# Catatan: mulai dengan max-age pendek (300 detik = 5 menit) di atas. Kalau
+# setelah beberapa hari HTTPS terbukti stabil, baru naikkan ke misalnya
+# "max-age=31536000; includeSubDomains" untuk perlindungan penuh setahun.
+# ================================================================
+# Pastikan Content-Type sitemap.xml & robots.txt selalu benar, apa pun
+# konfigurasi mime.types bawaan hosting -- supaya Google Search Console
+# tidak salah mengira responsnya bukan XML/teks saat mengambil peta situs.
+<IfModule mod_mime.c>
+  AddType application/xml .xml
+  AddType text/plain .txt
+</IfModule>
+# ================================================================
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml
+  AddOutputFilterByType DEFLATE application/javascript application/x-javascript text/javascript
+  AddOutputFilterByType DEFLATE application/json application/xml
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+<IfModule mod_setenvif.c>
+  # Jangan pernah kompres ulang file .gz yang sudah dikompres (mencegah
+  # "double gzip" yang bisa merusak responsnya kalau mod_deflate ternyata
+  # tetap aktif berbarengan dengan fallback .gz statis di bawah).
+  SetEnvIfNoCase Request_URI \.gz$ no-gzip
+</IfModule>
+
+# Fallback untuk kompresi kalau mod_deflate ternyata dimatikan di hosting ini
+# (beberapa akun gratis InfinityFree menonaktifkannya). File .gz sudah dibuat
+# untuk setiap CSS/JS di project ini (lihat GZIP_README.txt). Kalau browser
+# minta gzip dan file .gz-nya ada, sajikan itu langsung dengan header yang
+# benar -- jadi kompresi tetap jalan walau mod_deflate tidak tersedia.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP:Accept-Encoding} gzip
+  RewriteCond %{REQUEST_FILENAME}\.gz -f
+  RewriteRule ^(.*)$ $1.gz [L]
+
+  # [PATCH PERFORMA V.0.9.1.0] Fallback gzip khusus untuk request root ("/").
+  # %{REQUEST_FILENAME} pada rule di atas TIDAK bisa dipakai untuk request root: di
+  # tahap mod_rewrite, request ini masih menunjuk ke folder root itu sendiri, bukan
+  # index.html (substitusi DirectoryIndex terjadi setelah fase rewrite) -- jadi
+  # RewriteCond di atas selalu gagal khusus untuk "/", dan permintaan dokumen pertama
+  # tidak pernah dapat fallback gzip walau CSS/JS lain semuanya sudah terkompresi.
+  # Ini persis yang ditandai laporan PageSpeed Insights ("tidak ada kompresi" khusus
+  # pada request dokumen). Dicek langsung ke %{DOCUMENT_ROOT}/index.html.gz untuk
+  # kasus root (^$), lalu disajikan lewat rule terpisah ini.
+  # [CATATAN PENGGABUNGAN] paket sumber patch ini (V_0_9_1_0_OPTIMASI_PERFORMA.zip)
+  # ternyata tidak menyertakan berkas .htaccess sama sekali (bug pengemasan arsip --
+  # pola yang sama seperti yang pernah terjadi di Merge #5, lihat catatan di bagian
+  # itu di CHANGELOG_LENGKAP.md) walau CHANGELOG bawaan paket tsb mendeskripsikan
+  # perubahan ini secara rinci. 2 baris RewriteCond + 1 RewriteRule di bawah ini
+  # direkonstruksi dari deskripsi tersebut, BUKAN disalin byte-per-byte dari sumber
+  # asli. FilesMatch "\.html\.gz$" pada blok mod_headers di bawah sudah otomatis
+  # mencakup index.html.gz juga, jadi tidak perlu blok header terpisah untuk ini.
+  RewriteCond %{HTTP:Accept-Encoding} gzip
+  RewriteCond %{DOCUMENT_ROOT}/index.html.gz -f
+  RewriteRule ^$ index.html.gz [L]
+</IfModule>
+<IfModule mod_headers.c>
+  <FilesMatch "\.js\.gz$">
+    Header set Content-Encoding gzip
+    Header set Content-Type "application/javascript"
+    Header set Cache-Control "public, max-age=31536000, immutable"
+    Header append Vary Accept-Encoding
+  </FilesMatch>
+  <FilesMatch "\.css\.gz$">
+    Header set Content-Encoding gzip
+    Header set Content-Type "text/css"
+    Header set Cache-Control "public, max-age=31536000, immutable"
+    Header append Vary Accept-Encoding
+  </FilesMatch>
+  <FilesMatch "\.html\.gz$">
+    Header set Content-Encoding gzip
+    Header set Content-Type "text/html; charset=UTF-8"
+    Header set Cache-Control "no-cache"
+    Header append Vary Accept-Encoding
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  # HTML: jangan di-cache lama (biar perubahan struktur halaman langsung terlihat)
+  ExpiresByType text/html "access plus 0 seconds"
+  # CSS/JS/gambar/font: aman di-cache lama karena sudah pakai cache-busting versi
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/javascript "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType image/x-icon "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType audio/mpeg "access plus 1 year"
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(css|js|png|jpg|jpeg|webp|svg|ico|woff2|mp3)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+
+  # Header keamanan tambahan -- ini yang bikin skor "Praktik Terbaik" di
+  # PageSpeed naik (sebelumnya 74, kekurangan poin karena CSP/COOP/clickjacking
+  # protection belum ada sama sekali).
+  #
+  # CSP di bawah ini dibuat mengizinkan persis apa yang situs ini benar-benar
+  # pakai: Google Fonts, blob: (untuk loader musik yang baru), dan
+  # 'unsafe-inline' karena banyak style="" & 1 inline <script> yang sudah ada
+  # di index.html. Ini BUKAN CSP paling ketat yang mungkin (yang paling ketat
+  # butuh refactor semua inline style/script pakai nonce, cukup berisiko
+  # dikerjakan tanpa pengujian langsung di server) -- tapi tetap memblokir
+  # domain asing manapun mencoba menyuntik script/gambar/iframe ke halaman ini.
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+  Header always set Cross-Origin-Opener-Policy "same-origin"
+</IfModule>

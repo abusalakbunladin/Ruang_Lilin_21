@@ -1,0 +1,73 @@
+/* File: CSS_2/history_ui.css
+   Proyek: 21: Ruang Lilin
+   Fungsi: Styling untuk (1) daftar Riwayat Pertandingan Online di profil,
+   dan (2) banner +/- Rating & Rank Points di layar akhir pertandingan online.
+   Memakai variabel warna yang sama dengan file CSS lain di proyek ini. */
+
+/* ---- Riwayat Pertandingan Online (di dalam overlay-profile) ---- */
+/* .profile-history-section jg berclass .profile-panel -- saat aktif jadi
+   flex column (lihat profile_ui.css) supaya list-nya (di bawah) bisa
+   diberi flex:1 dan ikut melebar mengisi ruang, konsisten dgn Daftar
+   Teman & Inbox. Judul (h3) diberi flex-shrink:0 supaya tidak ikut
+   menyusut kalau ruang sempit. */
+.profile-history-section{margin:16px 0}
+.profile-history-section h3{font-size:13px;color:var(--brass-bright);text-transform:uppercase;letter-spacing:1px;margin:0 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px;flex-shrink:0}
+#profile-history-list{flex:1 1 auto;min-height:160px;overflow-y:auto;padding-right:2px}
+/* Wrapper tombol "Muat Lebih Sedikit" + "Muat Lebih Banyak": sejajar,
+   berjarak rapi, dan tidak ikut menyusut/melebar aneh di flex column. */
+.profile-history-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:12px;
+  flex-shrink:0;
+}
+#overlay-profile .profile-history-actions .btn{
+  width:auto;
+  flex:1 1 150px;
+  margin:0;
+}
+.match-history-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);border-left-width:3px;margin-bottom:9px}
+.match-history-row.won{border-left-color:#27ae60}
+.match-history-row.lost{border-left-color:var(--blood-bright)}
+.match-history-badge{flex-shrink:0;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;letter-spacing:.3px}
+.match-history-badge.won{background:rgba(39,174,96,.15);color:#27ae60;border:1px solid rgba(39,174,96,.4)}
+.match-history-badge.lost{background:rgba(217,74,74,.15);color:#e07070;border:1px solid rgba(217,74,74,.4)}
+.match-history-info{flex:1;min-width:0}
+.match-history-opponent{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.match-history-meta{font-size:10px;color:var(--ink-dim);margin-top:2px}
+/* [PERINGKAT VS LATIHAN] V.0.9.1.0 -- label kecil per baris riwayat: pertandingan
+   publik/Cari Lawan (ranked=1, mempengaruhi rating) vs ruangan privat (ranked=0,
+   pertandingan latihan). Lihat JSS_2/JSS_HISTORY.js renderMatchRow() & api/match_history.php. */
+.match-history-mode{flex-shrink:0;font-size:8.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:2px 7px;border-radius:8px;line-height:1.5}
+.match-history-mode.ranked{color:var(--brass-bright);background:rgba(176,138,78,.14);border:1px solid rgba(176,138,78,.4)}
+.match-history-mode.practice{color:var(--ink-dim);background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.match-history-deltas{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:10.5px}
+.match-history-delta-item{white-space:nowrap}
+.match-history-delta-item.gain{color:#27ae60}
+.match-history-delta-item.loss{color:#e07070}
+.match-history-delta-item.neutral{color:var(--ink-dim)}
+.match-history-empty{color:var(--ink-dim);text-align:center;padding:20px 0;font-size:12.5px;font-style:italic}
+
+/* ---- Banner +/- Rating & Rank Points di layar akhir pertandingan online ---- */
+.end-rating-delta{display:flex;justify-content:center;gap:10px;margin:14px 0;flex-wrap:wrap}
+.end-rating-delta.hidden{display:none}
+.end-delta-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 20px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);min-width:110px}
+.end-delta-item.gain{border-color:rgba(39,174,96,.5)}
+.end-delta-item.loss{border-color:rgba(217,74,74,.5)}
+.end-delta-label{font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.5px}
+.end-delta-value{font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.end-delta-item.gain .end-delta-value{color:#27ae60}
+.end-delta-item.loss .end-delta-value{color:#e07070}
+/* [PERINGKAT VS LATIHAN] V.0.9.1.0 -- catatan pengganti saat pertandingan online
+   yang baru selesai adalah pertandingan LATIHAN (ruangan kode privat) -- dulu
+   banner rating cuma diam-diam disembunyikan tanpa penjelasan (lihat komentar
+   "kedua nilai null" di JSS_HISTORY.js), sekarang pemain diberi tahu alasannya. */
+.end-practice-note{text-align:center;font-size:11.5px;font-style:italic;color:var(--ink-dim);margin:14px 0;padding:10px 16px;border:1px dashed var(--line);border-radius:8px;background:rgba(255,255,255,.02)}
+.end-practice-note.hidden{display:none}
+
+@media (max-width:480px){
+  .end-delta-item{min-width:88px;padding:8px 14px}
+  .end-delta-value{font-size:17px}
+  .match-history-opponent{max-width:130px}
+}

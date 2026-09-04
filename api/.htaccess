@@ -1,0 +1,22 @@
+# File: api/.htaccess
+# Proyek: 21: Ruang Lilin
+# Fungsi: Konfigurasi Apache folder api: proteksi dan routing.
+RewriteEngine Off
+
+# Blokir akses langsung lewat browser ke file yang tidak boleh diunduh mentah:
+# schema.sql membocorkan struktur database, *.example.php cuma referensi,
+# db_config.php/mail_config.php berisi kredensial asli, dan file titik
+# (.schema_checked, penanda cache migrasi skema) tidak perlu diakses browser.
+# Dibungkus <IfModule> ganda supaya jalan baik di Apache 2.4 (mod_authz_core)
+# maupun Apache 2.2 ke bawah (mod_access) -- salah satu otomatis dipakai.
+<IfModule mod_authz_core.c>
+    <FilesMatch "\.(sql|example\.php)$|^(db_config|mail_config)\.php$|^\.">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    <FilesMatch "\.(sql|example\.php)$|^(db_config|mail_config)\.php$|^\.">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>
