@@ -1,1 +1,0 @@
-window.SPRITE_BADGE="<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><circle cx=\"12\" cy=\"9\" r=\"6\"/><path d=\"M9 14.5L7 22l5-3 5 3-2-7.5\"/></svg><span>MENANG DI MODE SULIT</span>";
